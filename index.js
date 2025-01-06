@@ -20,7 +20,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // await client.connect();
+    await client.connect();
 
     // Database
     const reviewCollection = client.db("Chill-Gamers-DB").collection("Reviews");
@@ -30,6 +30,10 @@ async function run() {
     const playlistCollection = client
       .db("Chill-Gamers-DB")
       .collection("Playlist");
+    const newsCollection = client
+      .db("Chill-Gamers-DB")
+      .collection("Latest-News");
+
     // User Review
     app.get("/reviews", async (req, res) => {
       const result = await reviewCollection.find().toArray();
@@ -100,11 +104,25 @@ async function run() {
     // Add to Playlist
     app.post("/add-to-playlist", async (req, res) => {
       const playlist = req.body;
+      const query = { email: playlist.email, gameId: playlist.gameId };
+      const isFind = await playlistCollection.findOne(query);
+      if (isFind) {
+        return res.send(isFind);
+      }
       const result = await playlistCollection.insertOne(playlist);
       res.send(result);
     });
-
-    // await client.db("admin").command({ ping: 1 });
+    // Play station games
+    app.get("/play-station-games", async (req, res) => {
+      const games = await reviewCollection.find().limit(7).toArray();
+      res.send(games);
+    });
+    // Get News
+    app.get("/news", async (req, res) => {
+      const result = await newsCollection.find().toArray();
+      res.send(result);
+    });
+    await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
